@@ -22,8 +22,8 @@ import util
 
 
 def argsparser():
-    parser = argparse.ArgumentParser("Tensorflow Implementation of GAIL")
-    parser.add_argument('--env_id', help='environment ID', default='Hopper-v2')
+    parser = argparse.ArgumentParser("Tensorflow Implementation of GAIL/POfD")
+    parser.add_argument('--env_id', help='environment ID', default='Hopper-v1')
     parser.add_argument('--seed', help='RNG seed', type=int, default=0)
     parser.add_argument('--expert_path', type=str, default='data/deterministic.trpo.Hopper.0.00.npz')
     parser.add_argument('--checkpoint_dir', help='the directory to save model', default='checkpoint')
@@ -45,8 +45,11 @@ def argsparser():
     # Algorithms Configuration
     parser.add_argument('--algo', type=str, choices=['trpo', 'trpo_reward'], default='trpo')  # must specify algo
     parser.add_argument('--max_kl', type=float, default=0.01)
-    parser.add_argument('--policy_entcoeff', help='entropy coefficiency of policy', type=float, default=0)
+    parser.add_argument('--policy_entcoeff', help='entropy coefficiency of policy', type=float, default=None)
     parser.add_argument('--adversary_entcoeff', help='entropy coefficiency of discriminator', type=float, default=1e-3)
+    # ------ POfD ------
+    parser.add_argument('--reward_coeff', help='coefficiency of discriminator reward', type=float, default=1e-1)
+
     # Traing Configuration
     parser.add_argument('--save_per_iter', help='save model every xx iterations', type=int, default=5)
     parser.add_argument('--num_timesteps', help='number of timesteps per episode', type=int, default=5e6)
@@ -99,6 +102,7 @@ def main(args):
               args.g_step,
               args.d_step,
               args.policy_entcoeff,
+              args.reward_coeff,
               args.num_timesteps,
               args.save_per_iter,
               args.checkpoint_dir,
@@ -122,7 +126,7 @@ def main(args):
 
 
 def train(env, env_name, seed, policy_fn, reward_giver, dataset, algo,
-          g_step, d_step, policy_entcoeff, num_timesteps, save_per_iter,
+          g_step, d_step, policy_entcoeff, reward_coeff, num_timesteps, save_per_iter,
           checkpoint_dir, log_dir, pretrained, BC_max_iter, task_name=None):
     pretrained_weight = None
     if pretrained and (BC_max_iter > 0):
@@ -144,6 +148,7 @@ def train(env, env_name, seed, policy_fn, reward_giver, dataset, algo,
                        pretrained=pretrained, pretrained_weight=pretrained_weight,
                        g_step=g_step, d_step=d_step,
                        entcoeff=policy_entcoeff,
+                       reward_coeff=reward_coeff,
                        max_timesteps=num_timesteps,
                        ckpt_dir=checkpoint_dir, log_dir=log_dir,
                        save_per_iter=save_per_iter,
